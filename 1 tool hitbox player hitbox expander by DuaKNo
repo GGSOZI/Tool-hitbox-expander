@@ -8,10 +8,10 @@ local player = Players.LocalPlayer
 
 local CONFIG = {
 	Enabled = true,
-	Size = 12,
+	Size = 30,
 	MinSize = 1,
 	MaxSize = 2048,
-	PhysCap = 40,
+	PhysCap = 20,
 	Visual = "Normal",
 	ForceTouch = true,
 	Throwables = true,
@@ -21,20 +21,20 @@ local CONFIG = {
 	Overlap = true,
 	SnapTool = false,
 	SignalFire = true,
-	FullBody = true,
+	FullBody = false,
 	ShowOwners = false,
 	KeepOutside = true,
 	AutoClick = false,
 	ClickGap = 0.2,
-	Rapid = false,
-	AutoRetry = false,
-	SmartMode = false,
-	LagGuard = false,
-	RayAssist = false,
-	RayRadius = 6,
+	Rapid = true,
+	AutoRetry = true,
+	SmartMode = true,
+	LagGuard = true,
+	RayAssist = true,
+	RayRadius = 40,
 	Theme = "Neon",
-	EnemyColor = "Red",
-	ToolColor = "Blue",
+	EnemyColor = "Green",
+	ToolColor = "White",
 	BoxAlpha = 0.75,
 	EspName = false,
 	EspDist = false,
@@ -42,14 +42,24 @@ local CONFIG = {
 	Tracers = false,
 	TracerFrom = "Bottom",
 	EspColor = "White",
-	SpyExcluded = {},
+	SpyExcluded = {
+		DelayedRequestFunction = true,
+		GetIsComingSoon = true,
+		["RE/InputTelemetry"] = true,
+		GetPlayerProfileOpened = true,
+		GetSetting = true,
+		GetProfileBackgroundList = true,
+		Location = true,
+		OnAnalyticsUpdate = true,
+		MouseInfoRE = true,
+	},
 	SpyBlocked = {},
-	SpyW = 340,
-	SpyH = 440,
+	SpyW = 535.12109375,
+	SpyH = 400,
 	SpyView = "List",
 	SpyAuto = false,
-	SpyFont = 11,
-	SpyRepeat = 1,
+	SpyFont = 13,
+	SpyRepeat = 5,
 	SpyWhite = {},
 	SpyWhiteOn = false,
 	SpyMacros = {},
@@ -58,71 +68,152 @@ local CONFIG = {
 	SpyScripts = false,
 	SpyMore = false,
 	HitShape = "Cube",
-	Objects = false,
-	ObjSize = 14,
-	ObjMode = "Auto",
-	ObjRange = 60,
-	ObjWhen = "Attack",
+	Objects = true,
+	ObjSize = 30,
+	ObjMode = "Name",
+	ObjRange = 250,
+	ObjWhen = "Always",
 	ObjTouch = true,
-	ObjKeywords = "crate, barrel, box, wall, glass, door, tree, rock, ore, chest, pot, vase, fence, dummy, target, break",
-	ObjColor = "Orange",
+	ObjKeywords = "Pumpkin",
+	ObjColor = "Cyan",
 	Radar = false,
-	RadarRange = 100,
-	RadarSize = 130,
+	RadarRange = 200,
+	RadarSize = 100,
 	RadarObjects = false,
 	TeleportMode = false,
 	TeleportDist = 6,
 	TeleportPart = "Root",
 	TeleportAnchored = false,
-	IgnoreTeam = false,
-	ReachRing = false,
-	TargetMode = "Auto",
-	TargetSize = 8,
+	IgnoreTeam = true,
+	ReachRing = true,
+	TargetMode = "On",
+	TargetSize = 20,
 	TargetHeight = 0,
-	BurstTime = 1,
+	BurstTime = 1.5,
 	AnimTrigger = true,
-	ForcePower = 2,
-	SimRadius = false,
+	ForcePower = 3,
+	SimRadius = true,
 	ForceKey = Enum.KeyCode.G,
 	ToggleKey = Enum.KeyCode.H,
-	Safe = false,
+	Safe = true,
 	PerTool = false,
-	ToolSizes = {},
+	ToolSizes = {
+		Megafon = 250,
+		Baguette = 250,
+		Push = 250,
+		Speedrun = 30,
+	},
 	FrontOnly = false,
-	BodyPart = "Whole",
+	BodyPart = "Torso",
 	DistScale = false,
 	NPCSize = 0,
 	AimAssist = false,
 	HoldMode = false,
 	HealthBars = false,
 	AutoPause = true,
-	Presets = {},
+	Presets = {
+		["1"] = {
+			RadarSize = 100,
+			AutoClick = false,
+			ShowOwners = false,
+			ObjSize = 30,
+			RadarObjects = false,
+			PerTool = false,
+			HealthBars = false,
+			PhysCap = 30,
+			Tracers = false,
+			ToolColor = "White",
+			Overlap = true,
+			FullBody = false,
+			FrontOnly = false,
+			ForcePower = 3,
+			Throwables = true,
+			TargetSize = 20,
+			HitShape = "Cube",
+			BoxAlpha = 0.75,
+			TargetName = "",
+			ClickGap = 0.2,
+			KeepOutside = true,
+			RadarRange = 200,
+			SmartMode = true,
+			EspDist = false,
+			ObjKeywords = "Pumpkin",
+			EspName = false,
+			EnemyColor = "Green",
+			ForceTouch = true,
+			RayAssist = true,
+			ObjColor = "Cyan",
+			Moves = true,
+			TeleportMode = false,
+			DistScale = false,
+			AimAssist = false,
+			ObjWhen = "Always",
+			Objects = true,
+			TargetFilter = "All",
+			EspHealth = false,
+			TeleportDist = 6,
+			IgnoreTeam = true,
+			TeleportAnchored = false,
+			TeleportPart = "Root",
+			AutoRetry = true,
+			ObjRange = 250,
+			SnapTool = false,
+			HoldMode = false,
+			BurstTime = 1.5,
+			NPCSize = 0,
+			SimRadius = true,
+			BodyPart = "Torso",
+			ReachRing = true,
+			ToolSizes = {
+				Megafon = 250,
+				Baguette = 250,
+				Push = 250,
+				Speedrun = 30,
+			},
+			AnimTrigger = true,
+			Visual = "Normal",
+			LagGuard = true,
+			TargetHeight = 0,
+			Rapid = true,
+			AutoPause = true,
+			RayRadius = 40,
+			ObjMode = "Name",
+			Radar = false,
+			ObjTouch = true,
+			Size = 30,
+			TracerFrom = "Bottom",
+			EspColor = "White",
+			SignalFire = true,
+			TargetMode = "On",
+		},
+	},
 	CycleKey = Enum.KeyCode.Home,
 	HitKey = Enum.KeyCode.End,
 	SafeKey = Enum.KeyCode.Insert,
 	LockKey = Enum.KeyCode.PageUp,
 	HoldKey = Enum.KeyCode.LeftAlt,
-	PanelW = 270,
-	PanelH = 390,
+	PanelW = 279,
+	PanelH = 249,
 }
 K.DEFAULTS = {
-	HitShape = "Cube", Objects = false, ObjSize = 14, ObjMode = "Auto", ObjRange = 60, ObjWhen = "Attack", ObjTouch = true, ObjColor = "Orange",
-	Radar = false, RadarRange = 100, RadarSize = 130, RadarObjects = false, TeleportMode = false, TeleportDist = 6, TeleportPart = "Root",
+	HitShape = "Cube", Objects = true, ObjSize = 30, ObjMode = "Name", ObjRange = 250, ObjWhen = "Always", ObjTouch = true, ObjColor = "Cyan",
+	Radar = false, RadarRange = 200, RadarSize = 100, RadarObjects = false, TeleportMode = false, TeleportDist = 6, TeleportPart = "Root",
 	ShowOwners = false,
 	KeepOutside = true,
-	AutoClick = false, ClickGap = 0.2, Rapid = false, AutoRetry = false, SmartMode = false, LagGuard = false, RayAssist = false, RayRadius = 6,
-	EnemyColor = "Red", ToolColor = "Blue", BoxAlpha = 0.75, EspName = false, EspDist = false, EspHealth = false, Tracers = false,
+	AutoClick = false, ClickGap = 0.2, Rapid = true, AutoRetry = true, SmartMode = true, LagGuard = true, RayAssist = true, RayRadius = 40,
+	EnemyColor = "Green", ToolColor = "White", BoxAlpha = 0.75, EspName = false, EspDist = false, EspHealth = false, Tracers = false,
 	TracerFrom = "Bottom", EspColor = "White",
-	Overlap = true, SnapTool = false, SignalFire = true, FullBody = true, TargetName = "", Size = 12, PhysCap = 40, Visual = "Normal", ForceTouch = true, Throwables = true, Moves = true,
-	TargetFilter = "All", IgnoreTeam = false, ReachRing = false, TargetMode = "Auto", TargetSize = 8, TargetHeight = 0, BurstTime = 1,
-	AnimTrigger = true, ForcePower = 2, SimRadius = false, PerTool = false, FrontOnly = false, BodyPart = "Whole",
+	Overlap = true, SnapTool = false, SignalFire = true, FullBody = false, TargetName = "", Size = 30, PhysCap = 20, Visual = "Normal", ForceTouch = true, Throwables = true, Moves = true,
+	TargetFilter = "All", IgnoreTeam = true, ReachRing = true, TargetMode = "On", TargetSize = 20, TargetHeight = 0, BurstTime = 1.5,
+	AnimTrigger = true, ForcePower = 3, SimRadius = true, PerTool = false, FrontOnly = false, BodyPart = "Torso",
 	DistScale = false, NPCSize = 0, AimAssist = false, HoldMode = false, HealthBars = false, AutoPause = true,
+	Theme = "Neon", ObjKeywords = "Pumpkin", Safe = true, TeleportAnchored = false,
 }
 K.VISUALS = { "Normal", "Hidden", "Shown" }
 K.FILTERS = { "All", "NPCs", "Players" }
 K.BURSTS = { 0.5, 1, 1.5, 3 }
 K.TMODES = { "Off", "On", "Auto", "Gun", "Tool" }
-K.BODYPARTS = { "Whole", "Head", "Torso" }
+K.BODYPARTS = { "Whole", "Head", "Torso", "Root" }
 
 -- Themes, colors and helper lists
 local H = {}
@@ -817,6 +908,7 @@ K.BODY_ORDER = {
 	Whole = { "HumanoidRootPart", "Head", "UpperTorso", "Torso", "LowerTorso" },
 	Head = { "Head", "HumanoidRootPart", "UpperTorso", "Torso", "LowerTorso" },
 	Torso = { "UpperTorso", "Torso", "HumanoidRootPart", "LowerTorso", "Head" },
+	Root = { "HumanoidRootPart", "UpperTorso", "Torso", "LowerTorso", "Head" },
 }
 
 local function targetsAround(center, radius, maxN, nParts)
@@ -1385,7 +1477,7 @@ local function enemyBoxSize(model, dist)
 end
 
 -- Which enemy parts get the big hitbox.
--- Head / Torso = just that part. Whole = the entire body (root, head, torso, and with Full body every limb too).
+-- Head / Torso / Root (HumanoidRootPart) = just that part. Whole = the entire body (root, head, torso, and with Full body every limb too).
 local function boxParts(model)
 	local list = {}
 	local function add(p)
@@ -1398,6 +1490,8 @@ local function boxParts(model)
 		add(model:FindFirstChild("Head"))
 	elseif nm == "Torso" then
 		add(model:FindFirstChild("UpperTorso") or model:FindFirstChild("Torso"))
+	elseif nm == "Root" then
+		add(model:FindFirstChild("HumanoidRootPart"))
 	else
 		for _, n2 in ipairs(K.BODY_ORDER.Whole) do add(model:FindFirstChild(n2)) end
 		if CONFIG.FullBody then
@@ -2841,6 +2935,8 @@ function H.refreshRayTargets()
 				part = model:FindFirstChild("Head")
 			elseif CONFIG.BodyPart == "Torso" then
 				part = model:FindFirstChild("UpperTorso") or model:FindFirstChild("Torso")
+			elseif CONFIG.BodyPart == "Root" then
+				part = model:FindFirstChild("HumanoidRootPart")
 			end
 			part = (part and part:IsA("BasePart") and part) or modelRoot(model)
 			if part then list[#list + 1] = part end
@@ -4463,8 +4559,8 @@ local function buildGui()
 	ui.tbox = Pl.box("enemy hitbox size  or  size height", 30)
 	ui.npcbox = Pl.box("NPC hitbox size (0 = same as enemy)", 30)
 
-	Pl.card("Targeting")
-	local gP = Pl.grid(8)
+	Pl.card("Enemy hitbox")
+	local gP = Pl.grid(4)
 	Pl.cell(gP, function() return "Enemy hitbox: " .. CONFIG.TargetMode end, function() return CONFIG.TargetMode ~= "Off" end, function()
 		CONFIG.TargetMode = K.TMODES[(table.find(K.TMODES, CONFIG.TargetMode) or 1) % #K.TMODES + 1]
 		updateTargets()
@@ -4478,29 +4574,54 @@ local function buildGui()
 		CONFIG.IgnoreTeam = not CONFIG.IgnoreTeam
 		refreshUI()
 	end)
-	Pl.cell(gP, function() return "Body part: " .. CONFIG.BodyPart end, function() return CONFIG.BodyPart ~= "Whole" end, function()
-		CONFIG.BodyPart = K.BODYPARTS[(table.find(K.BODYPARTS, CONFIG.BodyPart) or 1) % #K.BODYPARTS + 1]
-		updateTargets()
-		refreshUI()
-	end)
-	Pl.cell(gP, function() return "Distance scale: " .. onoff(CONFIG.DistScale) end, function() return CONFIG.DistScale end, function()
-		CONFIG.DistScale = not CONFIG.DistScale
-		updateTargets()
-		refreshUI()
-	end)
-	Pl.cell(gP, function() return "Health bars: " .. onoff(CONFIG.HealthBars) end, function() return CONFIG.HealthBars end, function()
-		CONFIG.HealthBars = not CONFIG.HealthBars
-		if not CONFIG.HealthBars then clearBars() end
-		refreshUI()
-	end)
 	Pl.cell(gP, function() return "Keep outside: " .. onoff(CONFIG.KeepOutside) end, function() return CONFIG.KeepOutside end, function()
 		CONFIG.KeepOutside = not CONFIG.KeepOutside
 		refreshUI()
 	end)
-	Pl.cell(gP, function() return "Full body: " .. onoff(CONFIG.FullBody) end, function() return CONFIG.FullBody end, function()
+
+	Pl.card("Body part")
+	-- one tap picks the part: Whole / Head / Torso / Root (HumanoidRootPart)
+	local bpRow = Pl.row(30)
+	mk("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder }, bpRow)
+	local BP_LABEL = { Whole = "Whole", Head = "Head", Torso = "Torso", Root = "Root (HRP)" }
+	for i, part in ipairs(K.BODYPARTS) do
+		local b = mkButton(bpRow, "", UDim2.new(1 / #K.BODYPARTS, -3, 1, 0), nil, C.cardHi, 11)
+		b.LayoutOrder = i
+		b.TextScaled = true
+		mk("UITextSizeConstraint", { MaxTextSize = 12, MinTextSize = 8 }, b)
+		local function pick()
+			CONFIG.BodyPart = part
+			restoreTargets()
+			updateTargets()
+			refreshUI()
+		end
+		table.insert(connections, b.Activated:Connect(pick))
+		ui.cells[#ui.cells + 1] = {
+			b = b, text = function() return BP_LABEL[part] end, active = function() return CONFIG.BodyPart == part end,
+			click = pick, owner = Pl, card = Pl.curCard, cardTitle = "Body part",
+		}
+	end
+	local bpGrid = Pl.grid(1)
+	bpGrid:FindFirstChildOfClass("UIGridLayout").CellSize = UDim2.new(1, 0, 0, 28)
+	local gP2 = bpGrid
+	Pl.cell(gP2, function() return "Full body: " .. onoff(CONFIG.FullBody) end, function() return CONFIG.FullBody end, function()
 		CONFIG.FullBody = not CONFIG.FullBody
 		restoreTargets()
 		updateTargets()
+		refreshUI()
+	end)
+	Pl.note("Whole = the entire body (root, head, torso and, with Full body ON, every limb). Head / Torso = only that part. Root = the HumanoidRootPart only.")
+
+	Pl.card("Display")
+	local gP3 = Pl.grid(2)
+	Pl.cell(gP3, function() return "Distance scale: " .. onoff(CONFIG.DistScale) end, function() return CONFIG.DistScale end, function()
+		CONFIG.DistScale = not CONFIG.DistScale
+		updateTargets()
+		refreshUI()
+	end)
+	Pl.cell(gP3, function() return "Health bars: " .. onoff(CONFIG.HealthBars) end, function() return CONFIG.HealthBars end, function()
+		CONFIG.HealthBars = not CONFIG.HealthBars
+		if not CONFIG.HealthBars then clearBars() end
 		refreshUI()
 	end)
 	Pl.note("Enemy hitbox modes: Off, On (always), Auto (gun held or just after an attack), Gun, Tool. Keep outside stops a huge hitbox from swallowing you or your camera, which is what makes hits stop working.\n\nShape and Objects moved to the Objects tab.")
@@ -4932,7 +5053,7 @@ local function buildGui()
 		{ "attack anim", "animation trigger" }, { "size per tool", "per weapon each tool" }, { "throwables", "projectile knife grenade thrown" },
 		{ "moves", "punch skill ability click m1 attack" }, { "show", "visual see hitbox hidden transparent look" },
 		{ "enemy hitbox", "mode target on off auto gun tool" }, { "hit who", "filter npcs players all" },
-		{ "skip teammates", "team ignore friendly" }, { "body part", "head torso whole headshot" }, { "distance scale", "far near scale" },
+		{ "skip teammates", "team ignore friendly" }, { "body part", "head torso whole headshot root humanoidrootpart hrp" }, { "distance scale", "far near scale" },
 		{ "health bars", "hp bars life" }, { "front only", "facing forward" }, { "aim assist", "crosshair aim" },
 		{ "lock target", "lock pageup unlock" }, { "hold alt", "hold key manual" }, { "reach ring", "ring circle radius range" },
 		{ "auto pause", "respawn pause" }, { "hit now", "force burst g key manual" }, { "overlap", "scan limbs parts inside" },
@@ -5103,7 +5224,7 @@ local function buildGui()
 	entry("Size per tool", "When ON, each tool remembers its own size. Hold a tool and change the size box: only that tool changes.")
 	entry("Max real size warning", "A low limit means less lag, but the tool's real hitbox stays small. Anything farther only works through Auto hit.")
 	entry("NPC hitbox size", "A separate enemy hitbox size for NPCs. 0 = same as the enemy size.")
-	entry("Body part", "Whole = the entire body (root, head, torso and, with Full body ON, every limb). Head / Torso = only that part. Works on NPCs without a HumanoidRootPart too.")
+	entry("Body part", "Whole = the entire body (root, head, torso and, with Full body ON, every limb). Head / Torso / Root = only that part (Root = HumanoidRootPart). Works on NPCs without a HumanoidRootPart too.")
 	entry("Distance scale", "Far enemies get a bigger hitbox and near ones a smaller one, so nearby enemies don't look giant.")
 	entry("Health bars", "Shows a small health bar over up to 10 nearby enemies.")
 	entry("Front only", "Auto hit only goes to enemies in front of you.")
