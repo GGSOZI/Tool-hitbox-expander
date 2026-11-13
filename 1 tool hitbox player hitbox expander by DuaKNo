@@ -84,7 +84,7 @@ local CONFIG = {
 	TeleportDist = 6,
 	TeleportPart = "Root",
 	TeleportAnchored = false,
-	IgnoreTeam = true,
+	IgnoreTeam = false,
 	ReachRing = true,
 	TargetMode = "On",
 	TargetSize = 20,
@@ -104,7 +104,7 @@ local CONFIG = {
 		Speedrun = 30,
 	},
 	FrontOnly = false,
-	BodyPart = "Torso",
+	BodyPart = "Whole",
 	DistScale = false,
 	NPCSize = 0,
 	AimAssist = false,
@@ -152,7 +152,7 @@ local CONFIG = {
 			TargetFilter = "All",
 			EspHealth = false,
 			TeleportDist = 6,
-			IgnoreTeam = true,
+			IgnoreTeam = false,
 			TeleportAnchored = false,
 			TeleportPart = "Root",
 			AutoRetry = true,
@@ -194,6 +194,18 @@ local CONFIG = {
 	HoldKey = Enum.KeyCode.LeftAlt,
 	PanelW = 279,
 	PanelH = 249,
+	RealLook = true,
+	EnemyBtn = true,
+	UIBtn = true,
+	BtnSize = 44,
+	BtnAlpha = 0.15,
+	BtnColor = "Theme",
+	BtnShape = "Round",
+	BtnLock = false,
+	UIBtnText = "UI",
+	UIKeyName = "RightShift",
+	EnemyBtnPos = { 1, -86, 0.42, 0 },
+	UIBtnPos = { 1, -60, 0.3, 0 },
 }
 K.DEFAULTS = {
 	HitShape = "Cube", Objects = true, ObjSize = 30, ObjMode = "Name", ObjRange = 250, ObjWhen = "Always", ObjTouch = true, ObjColor = "Cyan",
@@ -204,10 +216,12 @@ K.DEFAULTS = {
 	EnemyColor = "Green", ToolColor = "White", BoxAlpha = 0.75, EspName = false, EspDist = false, EspHealth = false, Tracers = false,
 	TracerFrom = "Bottom", EspColor = "White",
 	Overlap = true, SnapTool = false, SignalFire = true, FullBody = false, TargetName = "", Size = 30, PhysCap = 20, Visual = "Normal", ForceTouch = true, Throwables = true, Moves = true,
-	TargetFilter = "All", IgnoreTeam = true, ReachRing = true, TargetMode = "On", TargetSize = 20, TargetHeight = 0, BurstTime = 1.5,
-	AnimTrigger = true, ForcePower = 3, SimRadius = true, PerTool = false, FrontOnly = false, BodyPart = "Torso",
+	TargetFilter = "All", IgnoreTeam = false, ReachRing = true, TargetMode = "On", TargetSize = 20, TargetHeight = 0, BurstTime = 1.5,
+	AnimTrigger = true, ForcePower = 3, SimRadius = true, PerTool = false, FrontOnly = false, BodyPart = "Whole",
 	DistScale = false, NPCSize = 0, AimAssist = false, HoldMode = false, HealthBars = false, AutoPause = true,
 	Theme = "Neon", ObjKeywords = "Pumpkin", Safe = true, TeleportAnchored = false,
+	RealLook = true, EnemyBtn = true, UIBtn = true, BtnSize = 44, BtnAlpha = 0.15, BtnColor = "Theme", BtnShape = "Round", BtnLock = false,
+	UIBtnText = "UI", UIKeyName = "RightShift", EnemyBtnPos = { 1, -86, 0.42, 0 }, UIBtnPos = { 1, -60, 0.3, 0 },
 }
 K.VISUALS = { "Normal", "Hidden", "Shown" }
 K.FILTERS = { "All", "NPCs", "Players" }
@@ -215,7 +229,6 @@ K.BURSTS = { 0.5, 1, 1.5, 3 }
 K.TMODES = { "Off", "On", "Auto", "Gun", "Tool" }
 K.BODYPARTS = { "Whole", "Head", "Torso", "Root" }
 
--- Themes, colors and helper lists
 local H = {}
 function H.rgb(r, g, b) return Color3.fromRGB(r, g, b) end
 K.THEME_NAMES = { "Neon", "Ocean", "Toxic", "Fire", "Mono" }
@@ -255,6 +268,11 @@ K.KEEP_MARGIN = 5
 K.SPY_VIEWS = { "List", "Stack", "Name" }
 K.SPY_REPEATS = { 1, 5, 20, 100 }
 K.SHAPES = { "Cube", "Sphere", "Flat", "Tall", "Wide" }
+K.BTN_SIZES = { 34, 44, 56, 70 }
+K.BTN_ALPHAS = { 0, 0.15, 0.35, 0.6 }
+K.BTN_COLORS = { "Theme", "Red", "Orange", "Yellow", "Green", "Cyan", "Blue", "Purple", "Pink", "White" }
+K.BTN_SHAPES = { "Round", "Square" }
+K.LOOK_MAX = 400
 K.OBJ_MODES = { "Auto", "Name", "Aim" }
 K.OBJ_RANGES = { 30, 60, 120, 250 }
 K.OBJ_WHEN = { "Attack", "Always" }
@@ -339,7 +357,6 @@ function H.touchGap()
 end
 local lag = { level = 0, low = 0, high = 0 }
 
--- Smart mode: tries your enabled force methods on each attack and learns which ones cause damage
 K.SMART_METHODS = { "Overlap", "SignalFire", "SnapTool", "FullBody" }
 local smart = { users = 0, stats = {} }
 for _, m in ipairs(K.SMART_METHODS) do smart.stats[m] = { onT = 0, onW = 0, offT = 0, offW = 0 } end
@@ -408,8 +425,6 @@ function H.smartReport()
 	return #out > 0 and ("Smart use chance:  " .. table.concat(out, "   ")) or "Smart mode needs at least one force method on (Aim tab)."
 end
 
--- Hitbox shapes (enemy and object boxes) and breakable objects
-
 function H.shapeSize(sz)
 	local sh = CONFIG.HitShape
 	local m = math.max(sz.X, sz.Y, sz.Z)
@@ -425,7 +440,6 @@ function H.shapeSize(sz)
 	return sz
 end
 
--- draws the box (or ball) outline for a resized part
 function H.syncAdorn(d, part, psz, col, name)
 	local want = CONFIG.HitShape == "Sphere" and "SphereHandleAdornment" or "BoxHandleAdornment"
 	if d.adorn and (not d.adorn.Parent or d.adorn.ClassName ~= want) then
@@ -450,7 +464,6 @@ function H.syncAdorn(d, part, psz, col, name)
 	d.adorn.Transparency = CONFIG.BoxAlpha
 end
 
--- breakable objects found near you (filled by H.refreshObjects), used for the box and for touches
 local objects = { list = {}, n = 0 }
 local teleEnemy = setmetatable({}, { __mode = "k" })
 local teleObj = setmetatable({}, { __mode = "k" })
@@ -484,8 +497,6 @@ function H.teleParts(model, fallback)
 	if #list == 0 and fallback then list[1] = fallback end
 	return list
 end
--- Moving one part of a rig normally drags the whole rig. Switching off the joints between it and the other body parts
--- lets just that one part move; the joints come back on when it is put back.
 function H.detachJoints(part)
 	local list = {}
 	local model = part.Parent
@@ -570,8 +581,8 @@ function H.objectExtra(targets, center, radius)
 end
 local statusMsg, statusUntil = nil, 0
 
-K.SAVE_FILE = "ToolHitboxExpander_DuaKNo.json"
-K.SAVE_KEYS = { "Size", "PhysCap", "Visual", "ForceTouch", "Throwables", "Moves", "TargetFilter", "TargetName", "Overlap", "SnapTool", "SignalFire", "FullBody", "ShowOwners", "KeepOutside", "AutoClick", "ClickGap", "Rapid", "AutoRetry", "SmartMode", "LagGuard", "RayAssist", "RayRadius", "Theme", "EnemyColor", "ToolColor", "BoxAlpha", "EspName", "EspDist", "EspHealth", "Tracers", "TracerFrom", "EspColor", "SpyExcluded", "SpyBlocked", "SpyW", "SpyH", "SpyView", "SpyAuto", "SpyFont", "SpyRepeat", "SpyWhite", "SpyWhiteOn", "SpyMacros", "SpyRules", "SpyIncoming", "SpyScripts", "SpyMore", "HitShape", "Objects", "ObjSize", "ObjMode", "ObjRange", "ObjWhen", "ObjTouch", "ObjKeywords", "ObjColor", "Radar", "RadarRange", "RadarSize", "RadarObjects", "TeleportMode", "TeleportDist", "TeleportPart", "TeleportAnchored", "IgnoreTeam", "ReachRing", "TargetMode", "TargetSize", "TargetHeight", "BurstTime", "AnimTrigger", "ForcePower", "SimRadius", "PanelW", "PanelH", "Safe", "PerTool", "ToolSizes", "FrontOnly", "BodyPart", "DistScale", "NPCSize", "AimAssist", "HoldMode", "HealthBars", "AutoPause", "Presets" }
+K.SAVE_FILE = "CustomHitbox_DuaKNo.json"
+K.SAVE_KEYS = { "Size", "PhysCap", "Visual", "ForceTouch", "Throwables", "Moves", "TargetFilter", "TargetName", "Overlap", "SnapTool", "SignalFire", "FullBody", "ShowOwners", "KeepOutside", "AutoClick", "ClickGap", "Rapid", "AutoRetry", "SmartMode", "LagGuard", "RayAssist", "RayRadius", "Theme", "EnemyColor", "ToolColor", "BoxAlpha", "EspName", "EspDist", "EspHealth", "Tracers", "TracerFrom", "EspColor", "SpyExcluded", "SpyBlocked", "SpyW", "SpyH", "SpyView", "SpyAuto", "SpyFont", "SpyRepeat", "SpyWhite", "SpyWhiteOn", "SpyMacros", "SpyRules", "SpyIncoming", "SpyScripts", "SpyMore", "HitShape", "Objects", "ObjSize", "ObjMode", "ObjRange", "ObjWhen", "ObjTouch", "ObjKeywords", "ObjColor", "Radar", "RadarRange", "RadarSize", "RadarObjects", "TeleportMode", "TeleportDist", "TeleportPart", "TeleportAnchored", "IgnoreTeam", "ReachRing", "TargetMode", "TargetSize", "TargetHeight", "BurstTime", "AnimTrigger", "ForcePower", "SimRadius", "PanelW", "PanelH", "Safe", "PerTool", "ToolSizes", "FrontOnly", "BodyPart", "DistScale", "NPCSize", "AimAssist", "HoldMode", "HealthBars", "AutoPause", "Presets", "RealLook", "EnemyBtn", "UIBtn", "BtnSize", "BtnAlpha", "BtnColor", "BtnShape", "BtnLock", "UIBtnText", "UIKeyName", "EnemyBtnPos", "UIBtnPos" }
 
 local function sanitizeConfig()
 	CONFIG.Size = math.clamp(CONFIG.Size, CONFIG.MinSize, CONFIG.MaxSize)
@@ -606,6 +617,21 @@ local function sanitizeConfig()
 	if not table.find(K.TELEPORT_PARTS, CONFIG.TeleportPart) then CONFIG.TeleportPart = "Root" end
 	CONFIG.ObjSize = math.clamp(tonumber(CONFIG.ObjSize) or 14, 2, 300)
 	CONFIG.ObjKeywords = tostring(CONFIG.ObjKeywords):sub(1, 300)
+	CONFIG.BtnSize = math.clamp(tonumber(CONFIG.BtnSize) or 44, 30, 90)
+	CONFIG.BtnAlpha = math.clamp(tonumber(CONFIG.BtnAlpha) or 0.15, 0, 0.9)
+	if not table.find(K.BTN_COLORS, CONFIG.BtnColor) then CONFIG.BtnColor = "Theme" end
+	if not table.find(K.BTN_SHAPES, CONFIG.BtnShape) then CONFIG.BtnShape = "Round" end
+	CONFIG.UIBtnText = tostring(CONFIG.UIBtnText):sub(1, 8)
+	if CONFIG.UIBtnText == "" then CONFIG.UIBtnText = "UI" end
+	if not pcall(function() return Enum.KeyCode[CONFIG.UIKeyName] end) then CONFIG.UIKeyName = "RightShift" end
+	for key, def in pairs({ EnemyBtnPos = { 1, -86, 0.42, 0 }, UIBtnPos = { 1, -60, 0.3, 0 } }) do
+		local p = CONFIG[key]
+		local good = type(p) == "table" and #p == 4
+		for i = 1, 4 do
+			if not (good and type(p[i]) == "number") then good = false end
+		end
+		if not good then CONFIG[key] = def end
+	end
 	for k, v in pairs(CONFIG.SpyWhite) do
 		if type(k) ~= "string" or v ~= true then CONFIG.SpyWhite[k] = nil end
 	end
@@ -972,7 +998,6 @@ end
 local overlapParams = OverlapParams.new()
 K.OVERLAP_RANGE = 120
 
--- Force: every enemy part that really overlaps the reach sphere (limbs, head, anything), not just the first few
 local function overlapExtra(targets, center, radius)
 	if not H.methodOn("Overlap") then return targets end
 	local ch = player.Character
@@ -1012,7 +1037,6 @@ local function fireAll(fromParts, targets)
 	for _, tp in ipairs(targets) do
 		for _, p in ipairs(fromParts) do pcall(firetouchinterest, p, tp, 1) end
 	end
-	-- Force: also fire the Touched signal itself (local scripts listening on your parts)
 	if H.methodOn("SignalFire") and hasSignal then
 		for i = 1, math.min(#fromParts, 3) do
 			for j = 1, math.min(#targets, 24) do
@@ -1062,7 +1086,6 @@ local function forceTouchOnce(tool)
 	targets = overlapExtra(targets, toolParts[1].Position, toolSizeFor(tool))
 	targets = H.objectExtra(targets, toolParts[1].Position, toolSizeFor(tool))
 	if #targets == 0 then return end
-	-- Force: briefly put the handle on the enemy so a real touch happens, then put it back
 	local snapH, snapCF
 	if H.methodOn("SnapTool") then
 		local h = tool:FindFirstChild("Handle")
@@ -1476,8 +1499,6 @@ local function enemyBoxSize(model, dist)
 	return Vector3.new(math.clamp(w, 2, 500), math.clamp(h, 2, 500), math.clamp(w, 2, 500))
 end
 
--- Which enemy parts get the big hitbox.
--- Head / Torso / Root (HumanoidRootPart) = just that part. Whole = the entire body (root, head, torso, and with Full body every limb too).
 local function boxParts(model)
 	local list = {}
 	local function add(p)
@@ -1494,9 +1515,7 @@ local function boxParts(model)
 		add(model:FindFirstChild("HumanoidRootPart"))
 	else
 		for _, n2 in ipairs(K.BODY_ORDER.Whole) do add(model:FindFirstChild(n2)) end
-		if CONFIG.FullBody then
-			for _, c in ipairs(model:GetChildren()) do add(c) end
-		end
+		for _, c in ipairs(model:GetChildren()) do add(c) end
 	end
 	if #list == 0 then add(modelRoot(model)) end
 	return list
@@ -1508,7 +1527,82 @@ local function isOwnModel(model, ch)
 	return false
 end
 
+-- Real look: the enemy part is resized for the hitbox, but what you SEE stays the original size.
+-- SpecialMesh heads: the mesh scale is divided by the size change. MeshPart / Part: the real part is made
+-- invisible and a welded, non-collidable copy at the original size is shown instead.
+H.lookCount = 0
+
+function H.lookInit(root, d)
+	d.look = false
+	if root.Transparency >= 0.98 then return end
+	local mesh = root:FindFirstChildOfClass("SpecialMesh")
+	if mesh then
+		if mesh.MeshType == Enum.MeshType.FileMesh then
+			d.look = "keep"
+		else
+			d.look, d.mesh, d.meshScale = "mesh", mesh, mesh.Scale
+		end
+		return
+	end
+	if H.lookCount >= K.LOOK_MAX then return end
+	local was = root.Archivable
+	root.Archivable = true
+	local ok, vis = pcall(function() return root:Clone() end)
+	root.Archivable = was
+	if not ok or not vis then return end
+	for _, c in ipairs(vis:GetDescendants()) do
+		if not (c:IsA("Decal") or c:IsA("Texture") or c:IsA("SurfaceAppearance") or c:IsA("DataModelMesh")) then c:Destroy() end
+	end
+	vis.Name = "HBX_Look"
+	vis:SetAttribute("HBX_Clone", true)
+	vis.Size = d.Size
+	vis.CanCollide, vis.CanQuery, vis.CanTouch, vis.Massless, vis.Anchored = false, false, false, true, false
+	vis.CFrame = root.CFrame
+	local w = Instance.new("WeldConstraint")
+	w.Part0, w.Part1 = root, vis
+	w.Parent = vis
+	vis.Parent = root
+	d.vis, d.look, d.tr0, d.hid = vis, "clone", root.Transparency, {}
+	for _, c in ipairs(root:GetChildren()) do
+		if c:IsA("Decal") or c:IsA("Texture") then
+			d.hid[#d.hid + 1] = { c, c.Transparency }
+			c.Transparency = 1
+		end
+	end
+	root.Transparency = 1
+	H.lookCount = H.lookCount + 1
+end
+
+function H.lookRestore(root, d)
+	local mode = d.look
+	if mode == "mesh" then
+		pcall(function() d.mesh.Scale = d.meshScale end)
+	elseif mode == "clone" then
+		pcall(function() if d.vis then d.vis:Destroy() end end)
+		pcall(function() root.Transparency = d.tr0 end)
+		for _, h in ipairs(d.hid or {}) do pcall(function() h[1].Transparency = h[2] end) end
+		H.lookCount = math.max(H.lookCount - 1, 0)
+	end
+	d.look, d.vis, d.mesh, d.hid = nil, nil, nil, nil
+end
+
+function H.lookApply(root, d, psz)
+	if not CONFIG.RealLook then
+		if d.look then H.lookRestore(root, d) end
+		return
+	end
+	if d.look == nil then H.lookInit(root, d) end
+	if d.look == "mesh" and d.mesh and d.mesh.Parent then
+		local n, sc = d.Size, d.meshScale
+		local want = Vector3.new(sc.X * n.X / psz.X, sc.Y * n.Y / psz.Y, sc.Z * n.Z / psz.Z)
+		if d.mesh.Scale ~= want then d.mesh.Scale = want end
+	elseif d.look == "clone" and d.vis and not d.vis.Parent then
+		H.lookRestore(root, d)
+	end
+end
+
 local function restoreTarget(root, d)
+	if d.look then H.lookRestore(root, d) end
 	if d.adorn then pcall(function() d.adorn:Destroy() end) end
 	pcall(function()
 		root.Size = d.Size
@@ -1548,7 +1642,6 @@ local function updateTargets()
 			if dist and dist <= K.TARGET_RANGE then
 				local tlist = H.teleParts(model, hrp)
 				if CONFIG.TeleportMode and not Players:GetPlayerFromCharacter(model) then
-					-- Anchored NPCs (quest givers, shopkeepers, dummies) are left completely alone unless "Anchored NPCs" is on.
 					if hrp.Anchored and not CONFIG.TeleportAnchored then continue end
 					-- Teleport hit: only while you are actually attacking (equipping a tool does nothing), and only the
 					-- chosen part (root part or legs) moves. Outside an attack it is left alone and put back.
@@ -1584,7 +1677,9 @@ local function updateTargets()
 						psz = Vector3.new(math.min(sz.X, cap), math.min(sz.Y, cap), math.min(sz.Z, cap))
 					end
 					psz = Vector3.new(math.min(psz.X, 2048), math.min(psz.Y, 2048), math.min(psz.Z, 2048))
+					d.want = psz
 					if root.Size ~= psz then pcall(function() root.Size = psz end) end
+					pcall(H.lookApply, root, d, psz)
 					if root.CanCollide or not root.CanQuery or not root.CanTouch or not root.Massless then
 						pcall(function()
 							root.CanCollide = false
@@ -1616,6 +1711,24 @@ local function updateTargets()
 	end
 	tcount = n
 end
+
+-- Players: re-apply the box every physics step so the game or the owner's client cannot shrink it between updates
+table.insert(connections, RunService.Stepped:Connect(function()
+	if not alive then return end
+	for root, d in pairs(tparts) do
+		local w, m = d.want, root.Parent
+		if w and m and Players:GetPlayerFromCharacter(m) then
+			if root.Size ~= w then pcall(function() root.Size = w end) end
+			if root.CanCollide or not root.CanTouch or not root.CanQuery then
+				pcall(function()
+					root.CanCollide = false
+					root.CanTouch = true
+					root.CanQuery = true
+				end)
+			end
+		end
+	end
+end))
 
 local function removeBar(model)
 	local b = healthBars[model]
@@ -1680,7 +1793,6 @@ local function trackHits()
 		if not keep[m] then removeBar(m) end
 	end
 end
-
 
 local function updateRing()
 	local ch = player.Character
@@ -1779,6 +1891,8 @@ end
 
 local function refreshUI()
 	if not gui then return end
+	if ui.btntext and not ui.btntext:IsFocused() then ui.btntext.Text = CONFIG.UIBtnText end
+	if H.styleButtons then H.styleButtons() end
 	ui.safe.Text = CONFIG.Safe and "Giant fix: ON" or "Giant fix: OFF"
 	ui.safe.BackgroundColor3 = CONFIG.Safe and Color3.fromRGB(205, 45, 45) or Color3.fromRGB(105, 40, 40)
 	ui.master.Text = CONFIG.Enabled and "Hitbox  ON" or "Hitbox  OFF"
@@ -1818,8 +1932,6 @@ local function setEnabled(on)
 	refreshUI()
 end
 
--- Network ownership trick: a huge simulation radius makes your client simulate (own) nearby unanchored parts,
--- so touches / Touched events on NPC and enemy parts actually run on your side.
 K.SIM_BIG = 1e9
 local simOrig = {}
 local function setPlayerProp(prop, v)
@@ -1981,7 +2093,6 @@ local function lev(a, b)
 	return prev[lb]
 end
 
--- closest players to what was typed (name or display name), best first
 local function playerMatches(q)
 	q = q:lower():match("^%s*(.-)%s*$")
 	local res = {}
@@ -2168,7 +2279,6 @@ local function setMinimized(v)
 	if v then mini.Position = panel.Position else panel.Position = mini.Position end
 end
 
--- SHOW OWNERSHIP: draws who simulates each part (settings().Physics.AreOwnersShown)
 local function applyOwners(on)
 	local ok = pcall(function() settings().Physics.AreOwnersShown = on end)
 	if not ok and type(sethiddenproperty) == "function" then
@@ -2178,7 +2288,6 @@ local function applyOwners(on)
 end
 if CONFIG.ShowOwners then applyOwners(true) end
 
--- THEME SWITCHER
 function H.colorKey(c)
 	return math.floor(c.R * 255 + 0.5) * 65536 + math.floor(c.G * 255 + 0.5) * 256 + math.floor(c.B * 255 + 0.5)
 end
@@ -2219,7 +2328,6 @@ function H.setTheme(name)
 end
 H.setThemePalette(CONFIG.Theme)
 
--- LAG GUARD: lowers force and visuals when FPS drops, restores them when FPS recovers
 K.LAG_FIELDS = { "Radar", "TeleportMode", "ForcePower", "Rapid", "Overlap", "SignalFire", "SnapTool", "FullBody", "EspName", "EspDist", "EspHealth", "Tracers", "HealthBars" }
 function H.lagRestore()
 	if lag.saved then
@@ -2280,7 +2388,6 @@ function H.lagStep()
 	end
 end
 
--- AUTO CLICK: attacks by itself while an enemy is in reach
 function H.autoClickStep()
 	if not (CONFIG.AutoClick and CONFIG.Enabled) or autoPaused then return end
 	if UserInputService:GetFocusedTextBox() then return end
@@ -2313,7 +2420,6 @@ function H.autoClickStep()
 	end
 end
 
--- ESP TEXT + TRACERS (drawn on their own overlay)
 local espGui
 local esp = {}
 K.ESP_RANGE = 1500
@@ -2451,7 +2557,6 @@ table.insert(connections, RunService.RenderStepped:Connect(function()
 	pcall(H.updateEsp)
 end))
 
--- BREAKABLE OBJECTS: expand their hitbox and touch them (crates, barrels, doors, ore, anything m1 can break)
 local oparts = {}
 local objParams = OverlapParams.new()
 local aimParams = RaycastParams.new()
@@ -2492,7 +2597,6 @@ function H.breakSignal(inst)
 	return false
 end
 
--- parts that are a person, an npc, a tool, huge map geometry or the ground are never objects
 function H.objectBase(p, myRoot, cache)
 	if not p:IsA("BasePart") or p.ClassName == "Terrain" then return false end
 	local d = oparts[p]
@@ -2655,7 +2759,6 @@ function H.updateObjects()
 	end
 end
 
--- RADAR
 local radar = { frame = nil, dots = {}, corners = {}, pos = nil }
 function H.ensureOverlay()
 	if espGui and espGui.Parent then return true end
@@ -2812,7 +2915,6 @@ table.insert(connections, RunService.RenderStepped:Connect(function()
 	pcall(H.updateRadar)
 end))
 
--- NAMECALL HOOK (used by remote spy and ray assist). Installed once per session, later runs just swap the handler.
 local env = (getgenv and getgenv()) or _G
 local canNamecall = type(getnamecallmethod) == "function"
 	and (type(hookmetamethod) == "function" or (type(getrawmetatable) == "function" and type(setreadonly) == "function"))
@@ -2879,7 +2981,6 @@ local function ensureHook()
 			end
 		end)
 	end
-	-- the functions themselves too, for scripts that call them without the namecall syntax (SimpleSpy does both)
 	local fnOk = false
 	if type(hookfunction) == "function" then
 		fnOk = pcall(function()
@@ -2922,7 +3023,6 @@ local function ensureHook()
 	return ok or fnOk
 end
 
--- RAY ASSIST: bends raycasts toward enemy parts that pass close to the ray (client side only)
 local rayCache = { t = -1, list = {} }
 function H.refreshRayTargets()
 	local list = {}
@@ -2965,7 +3065,6 @@ function H.assistVector(origin, dir)
 	return to.Unit * math.max(len, to.Magnitude + 2)
 end
 
--- REMOTE SPY
 function H.spyLog(remote, method, args)
 	spy.lastRec = nil
 	if not spy.on or spy.replaying then return nil end
@@ -2974,7 +3073,6 @@ function H.spyLog(remote, method, args)
 	local name = remote.Name
 	local nowT = os.clock()
 	local blocked = CONFIG.SpyBlocked[name] and "BLOCK" or nil
-	-- spam detection: a remote firing more than 20 times a second gets excluded when Auto is on
 	local r = spy.rate[name]
 	if not r or nowT - r.t > 1 then
 		r = { t = nowT, n = 0 }
@@ -3019,7 +3117,6 @@ function H.spyLog(remote, method, args)
 	return blocked
 end
 
--- server -> client calls (OnClientEvent)
 function H.incomingLog(remote, args)
 	if not spy.on or spy.replaying then return end
 	local name = remote.Name
@@ -3077,7 +3174,6 @@ function H.setIncoming(on)
 	end)
 end
 
--- argument rewrite rules (applied while the spy is recording)
 local ruleFns = setmetatable({}, { __mode = "k" })
 function H.ruleFn(rule)
 	local c = ruleFns[rule]
@@ -3195,7 +3291,6 @@ env.HBX_NC = function(self, method, args)
 end
 if CONFIG.RayAssist then ensureHook() end
 
--- code generation for logged calls
 function H.isIdent(s) return s:match("^[%a_][%w_]*$") ~= nil end
 function H.instPath(i)
 	if i == nil then return "nil" end
@@ -3312,7 +3407,6 @@ function H.genCode(rec)
 	return code
 end
 
--- macros (saved sequences of calls with their delays)
 local macroRec = setmetatable({}, { __mode = "k" })
 function H.stepFromRec(rec, delay)
 	rec.code = rec.code or H.genCode(rec)
@@ -3367,7 +3461,6 @@ function H.shortVal(v)
 	if #t > 70 then t = t:sub(1, 70) .. "..." end
 	return t
 end
--- compares two logged calls argument by argument
 function H.diffText(newer, older)
 	local lines = { "-- diff: selected call (new) vs the one before it (old)" }
 	local n = math.max(newer.args.n, older.args.n)
@@ -3384,7 +3477,6 @@ end
 
 K.EXPORT_FILE = "HBX_SpyExport.lua"
 
--- grouping helpers for the spy list
 function H.sigOf(rec)
 	if rec.sig then return rec.sig end
 	local parts = {}
@@ -3447,7 +3539,6 @@ local function buildSpyInner()
 	table.insert(connections, win.InputBegan:Connect(markPanel))
 	spy.win = win
 
-	-- header
 	local hdr = mk("Frame", { Size = UDim2.new(1, 0, 0, 30), BackgroundColor3 = C.card, BorderSizePixel = 0 }, win)
 	mk("TextLabel", {
 		Size = UDim2.new(1, -170, 1, 0), Position = UDim2.fromOffset(10, 0), BackgroundTransparency = 1, Text = "Remote Spy & Replay",
@@ -3524,7 +3615,6 @@ local function buildSpyInner()
 		TextXAlignment = Enum.TextXAlignment.Left, TextYAlignment = Enum.TextYAlignment.Top, TextWrapped = true,
 	}, win)
 
-	-- resize grip
 	local grip = mk("TextButton", {
 		Size = UDim2.fromOffset(24, 24), Position = UDim2.new(1, -24, 1, -24), BackgroundTransparency = 1, Text = "", AutoButtonColor = false,
 	}, win)
@@ -3705,7 +3795,6 @@ local function buildSpyInner()
 		end
 	end
 
-	-- helpers for the other views
 	local ord = 0
 	local function clearView()
 		for _, c in ipairs(spy.viewScroll:GetChildren()) do
@@ -3968,7 +4057,6 @@ local function buildSpyInner()
 	end
 	local function toggleView(v) setView(spy.view == v and "log" or v) end
 
-	-- header buttons
 	local maxState
 	table.insert(connections, closeB.Activated:Connect(function()
 		win.Visible = false
@@ -4002,7 +4090,6 @@ local function buildSpyInner()
 	table.insert(connections, bigB.Activated:Connect(function() setFont(1) end))
 	table.insert(connections, smallB.Activated:Connect(function() setFont(-1) end))
 
-	-- resizing by dragging the grip
 	local resizing, rInput, rStart, rW, rH = false, nil, nil, 0, 0
 	table.insert(connections, grip.InputBegan:Connect(function(i)
 		if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
@@ -4029,7 +4116,6 @@ local function buildSpyInner()
 		end
 	end))
 
-	-- toolbar buttons
 	table.insert(connections, pauseB.Activated:Connect(function()
 		spy.on = not spy.on
 		refreshBar()
@@ -4102,7 +4188,6 @@ local function buildSpyInner()
 	table.insert(connections, prevB.Activated:Connect(function() browse(-1) end))
 	table.insert(connections, nextB.Activated:Connect(function() browse(1) end))
 
-	-- action buttons
 	table.insert(connections, copyB.Activated:Connect(function() copyText(spy.box.Text, copyB) end))
 	table.insert(connections, pathB.Activated:Connect(function()
 		if not spy.sel then say("Select a call first") return end
@@ -4337,6 +4422,139 @@ local function toggleSpy()
 	end
 end
 
+function H.btnColor(on, isUI)
+	if CONFIG.BtnColor == "Theme" then
+		if isUI then return C.accent end
+		return on and C.on or C.off
+	end
+	local c = K.COLORS[CONFIG.BtnColor] or C.accent
+	if on or isUI then return c end
+	return c:Lerp(Color3.fromRGB(30, 30, 30), 0.65)
+end
+
+function H.clampBtn(b)
+	local vp = gui.AbsoluteSize
+	if vp.X < 50 or vp.Y < 50 then
+		local cam = workspace.CurrentCamera
+		vp = cam and cam.ViewportSize or Vector2.new(0, 0)
+	end
+	if vp.X < 50 or vp.Y < 50 then return end
+	local p, sz = b.Position, b.Size
+	local x = math.clamp(p.X.Scale * vp.X + p.X.Offset, 0, math.max(vp.X - sz.X.Offset, 0))
+	local y = math.clamp(p.Y.Scale * vp.Y + p.Y.Offset, 0, math.max(vp.Y - sz.Y.Offset, 0))
+	b.Position = UDim2.fromOffset(x, y)
+end
+
+function H.styleButtons()
+	local B = H.btns
+	if not B then return end
+	local sig = table.concat({
+		CONFIG.BtnSize, CONFIG.BtnAlpha, CONFIG.BtnColor, CONFIG.BtnShape, CONFIG.TargetMode, CONFIG.UIBtnText,
+		tostring(CONFIG.EnemyBtn), tostring(CONFIG.UIBtn), tostring(H.uiHidden), tostring(C.accent), tostring(C.on), tostring(C.off), tostring(C.line),
+	}, "|")
+	if sig == H.btnSig then return end
+	H.btnSig = sig
+	local s = CONFIG.BtnSize
+	local r = CONFIG.BtnShape == "Round" and s / 2 or 8
+	local on = CONFIG.TargetMode ~= "Off"
+	local eb, ub = B.enemy, B.ui
+	eb.Size = UDim2.fromOffset(math.floor(s * 1.6), s)
+	eb.Text = "Enemy\n" .. (on and (CONFIG.TargetMode == "On" and "ON" or CONFIG.TargetMode) or "OFF")
+	eb.BackgroundColor3 = H.btnColor(on, false)
+	eb.Visible = CONFIG.EnemyBtn
+	ub.Size = UDim2.fromOffset(s, s)
+	ub.Text = CONFIG.UIBtnText
+	ub.BackgroundColor3 = H.btnColor(true, true)
+	ub.Visible = CONFIG.UIBtn or H.uiHidden == true
+	for _, b in pairs(B) do
+		b.BackgroundTransparency = CONFIG.BtnAlpha
+		b:FindFirstChildOfClass("UICorner").CornerRadius = UDim.new(0, r)
+		b:FindFirstChildOfClass("UIStroke").Color = C.line
+		H.clampBtn(b)
+	end
+end
+
+function H.toggleEnemy()
+	if CONFIG.TargetMode == "Off" then
+		CONFIG.TargetMode = H.lastMode or "On"
+	else
+		H.lastMode = CONFIG.TargetMode
+		CONFIG.TargetMode = "Off"
+	end
+	updateTargets()
+	showStatus("Enemy hitbox: " .. CONFIG.TargetMode, 3)
+	refreshUI()
+	saveSettings()
+end
+
+function H.toggleUI()
+	if H.uiHidden then
+		H.uiHidden = false
+		setMinimized(H.wasMin or false)
+	else
+		H.wasMin = mini.Visible
+		H.uiHidden = true
+		panel.Visible = false
+		mini.Visible = false
+	end
+	H.styleButtons()
+end
+
+function H.dragButton(b, posKey, onTap)
+	local dragging, dragInput, dragStart, startPos, moved = false, nil, nil, nil, false
+	table.insert(connections, b.InputBegan:Connect(function(i)
+		if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
+			dragging, dragInput, moved = true, i, false
+			dragStart, startPos = i.Position, b.Position
+			i.Changed:Connect(function()
+				if i.UserInputState == Enum.UserInputState.End then
+					local was = dragging
+					dragging = false
+					if was and moved then
+						H.clampBtn(b)
+						local p = b.Position
+						CONFIG[posKey] = { p.X.Scale, p.X.Offset, p.Y.Scale, p.Y.Offset }
+						saveSettings()
+					elseif was and onTap then
+						onTap()
+					end
+				end
+			end)
+		end
+	end))
+	table.insert(connections, UserInputService.InputChanged:Connect(function(i)
+		if not dragging or CONFIG.BtnLock then return end
+		local isTouch = dragInput.UserInputType == Enum.UserInputType.Touch
+		if (isTouch and i == dragInput) or (not isTouch and i.UserInputType == Enum.UserInputType.MouseMovement) then
+			local d = i.Position - dragStart
+			if d.Magnitude > 6 then moved = true end
+			if moved then
+				b.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y)
+			end
+		end
+	end))
+end
+
+function H.buildButtons()
+	H.btns = {}
+	local function make(id, posKey, tap)
+		local b = mk("TextButton", {
+			Name = "HBX_" .. id, AutoButtonColor = false, Font = Enum.Font.GothamBold, TextColor3 = C.text,
+			BorderSizePixel = 0, TextScaled = true, ZIndex = 30, Text = "",
+		}, gui)
+		mk("UICorner", {}, b)
+		mk("UITextSizeConstraint", { MaxTextSize = 16, MinTextSize = 8 }, b)
+		mk("UIStroke", { Color = C.line, Thickness = 2 }, b)
+		local p = CONFIG[posKey]
+		b.Position = UDim2.new(p[1], p[2], p[3], p[4])
+		H.btns[id] = b
+		H.dragButton(b, posKey, tap)
+	end
+	make("enemy", "EnemyBtnPos", H.toggleEnemy)
+	make("ui", "UIBtnPos", H.toggleUI)
+	H.styleButtons()
+end
+
 local function buildGui()
 	local sg = Instance.new("ScreenGui")
 	sg.Name = "ToolHitboxExpander"
@@ -4364,7 +4582,7 @@ local function buildGui()
 	}, header)
 	mk("TextLabel", {
 		Size = UDim2.new(1, -112, 1, 0), Position = UDim2.fromOffset(10, 0), BackgroundTransparency = 1,
-		Text = "Tool hitbox / hitbox expander", Font = Enum.Font.GothamBold, TextSize = 11, TextColor3 = C.text,
+		Text = "Custom hitbox expander", Font = Enum.Font.GothamBold, TextSize = 11, TextColor3 = C.text,
 		TextXAlignment = Enum.TextXAlignment.Left, TextWrapped = true,
 	}, header)
 	local minBtn = mkButton(header, "-", UDim2.fromOffset(28, 24), UDim2.new(1, -68, 0, 6), C.cardHi, 16)
@@ -4470,7 +4688,6 @@ local function buildGui()
 
 	local function onoff(v) return v and "ON" or "OFF" end
 
-	-- TOOL PAGE
 	local T = newPage()
 	T.tab = 1
 	T.card("Your hitbox size")
@@ -4536,7 +4753,6 @@ local function buildGui()
 			setVisual(K.VISUALS[(table.find(K.VISUALS, CONFIG.Visual) or 1) % #K.VISUALS + 1])
 		end)
 
-	-- PLAYER PAGE
 	local Pl = newPage()
 	Pl.tab = 2
 	Pl.card("Pick a player")
@@ -4560,7 +4776,7 @@ local function buildGui()
 	ui.npcbox = Pl.box("NPC hitbox size (0 = same as enemy)", 30)
 
 	Pl.card("Enemy hitbox")
-	local gP = Pl.grid(4)
+	local gP = Pl.grid(6)
 	Pl.cell(gP, function() return "Enemy hitbox: " .. CONFIG.TargetMode end, function() return CONFIG.TargetMode ~= "Off" end, function()
 		CONFIG.TargetMode = K.TMODES[(table.find(K.TMODES, CONFIG.TargetMode) or 1) % #K.TMODES + 1]
 		updateTargets()
@@ -4579,11 +4795,65 @@ local function buildGui()
 		refreshUI()
 	end)
 
+	Pl.cell(gP, function() return "Real look: " .. onoff(CONFIG.RealLook) end, function() return CONFIG.RealLook end, function()
+		CONFIG.RealLook = not CONFIG.RealLook
+		refreshUI()
+	end)
+	Pl.cell(gP, function() return "Shape: " .. CONFIG.HitShape end, function() return CONFIG.HitShape ~= "Cube" end, function()
+		CONFIG.HitShape = H.nextOf(K.SHAPES, CONFIG.HitShape)
+		restoreTargets()
+		H.restoreObjects()
+		updateTargets()
+		refreshUI()
+	end)
+	Pl.note("Real look ON: the enemy part keeps its normal size on screen (the head does not look big) while the real hitbox stays as big as you set.")
+
+	Pl.card("Buttons")
+	local gB = Pl.grid(8)
+	Pl.cell(gB, function() return "Enemy button: " .. onoff(CONFIG.EnemyBtn) end, function() return CONFIG.EnemyBtn end, function()
+		CONFIG.EnemyBtn = not CONFIG.EnemyBtn
+		refreshUI()
+	end)
+	Pl.cell(gB, function() return "UI button: " .. onoff(CONFIG.UIBtn) end, function() return CONFIG.UIBtn end, function()
+		CONFIG.UIBtn = not CONFIG.UIBtn
+		refreshUI()
+	end)
+	Pl.cell(gB, function() return "Size: " .. CONFIG.BtnSize end, function() return false end, function()
+		CONFIG.BtnSize = H.nextOf(K.BTN_SIZES, CONFIG.BtnSize)
+		refreshUI()
+	end)
+	Pl.cell(gB, function() return "Opacity: " .. math.floor((1 - CONFIG.BtnAlpha) * 100 + 0.5) .. "%" end, function() return false end, function()
+		CONFIG.BtnAlpha = H.nextOf(K.BTN_ALPHAS, CONFIG.BtnAlpha)
+		refreshUI()
+	end)
+	Pl.cell(gB, function() return "Color: " .. CONFIG.BtnColor end, function() return false end, function()
+		CONFIG.BtnColor = H.nextOf(K.BTN_COLORS, CONFIG.BtnColor)
+		refreshUI()
+	end)
+	Pl.cell(gB, function() return "Shape: " .. CONFIG.BtnShape end, function() return false end, function()
+		CONFIG.BtnShape = H.nextOf(K.BTN_SHAPES, CONFIG.BtnShape)
+		refreshUI()
+	end)
+	Pl.cell(gB, function() return "Lock position: " .. onoff(CONFIG.BtnLock) end, function() return CONFIG.BtnLock end, function()
+		CONFIG.BtnLock = not CONFIG.BtnLock
+		refreshUI()
+	end)
+	Pl.cell(gB, function() return H.bindingKey and "Press a key..." or ("UI key: " .. CONFIG.UIKeyName) end, function() return H.bindingKey == true end, function()
+		H.bindingKey = not H.bindingKey
+		refreshUI()
+	end)
+	ui.btntext = Pl.box("UI button text (max 8)", 30)
+	table.insert(connections, ui.btntext.FocusLost:Connect(function()
+		local t = (ui.btntext.Text:gsub("^%s+", "")):gsub("%s+$", "")
+		if t ~= "" then CONFIG.UIBtnText = t:sub(1, 8) end
+		refreshUI()
+	end))
+	Pl.note("Drag the Enemy and UI buttons anywhere. The UI button (or its key) hides and shows this whole panel; the Enemy button turns the enemy hitbox on and off.")
+
 	Pl.card("Body part")
-	-- one tap picks the part: Whole / Head / Torso / Root (HumanoidRootPart)
 	local bpRow = Pl.row(30)
 	mk("UIListLayout", { FillDirection = Enum.FillDirection.Horizontal, Padding = UDim.new(0, 4), SortOrder = Enum.SortOrder.LayoutOrder }, bpRow)
-	local BP_LABEL = { Whole = "Whole", Head = "Head", Torso = "Torso", Root = "Root (HRP)" }
+	local BP_LABEL = { Whole = "Every part", Head = "Head", Torso = "Torso", Root = "Root (HRP)" }
 	for i, part in ipairs(K.BODYPARTS) do
 		local b = mkButton(bpRow, "", UDim2.new(1 / #K.BODYPARTS, -3, 1, 0), nil, C.cardHi, 11)
 		b.LayoutOrder = i
@@ -4601,16 +4871,7 @@ local function buildGui()
 			click = pick, owner = Pl, card = Pl.curCard, cardTitle = "Body part",
 		}
 	end
-	local bpGrid = Pl.grid(1)
-	bpGrid:FindFirstChildOfClass("UIGridLayout").CellSize = UDim2.new(1, 0, 0, 28)
-	local gP2 = bpGrid
-	Pl.cell(gP2, function() return "Full body: " .. onoff(CONFIG.FullBody) end, function() return CONFIG.FullBody end, function()
-		CONFIG.FullBody = not CONFIG.FullBody
-		restoreTargets()
-		updateTargets()
-		refreshUI()
-	end)
-	Pl.note("Whole = the entire body (root, head, torso and, with Full body ON, every limb). Head / Torso = only that part. Root = the HumanoidRootPart only.")
+	Pl.note("Every part = the whole body: root, head, torso and every arm and leg all get the big hitbox, and with Real look ON each one still looks its normal size. Head / Torso / Root = only that part.")
 
 	Pl.card("Display")
 	local gP3 = Pl.grid(2)
@@ -4652,7 +4913,6 @@ local function buildGui()
 	end)
 	Pl.note("Instead of resizing an NPC's hitbox, this moves just its root part (or legs) to right in front of you while you attack, hits it at normal size, then puts it back. Nothing moves when you only equip a tool. Players are never teleported and objects are not affected. Anchored NPCs (quest givers, shopkeepers) are skipped unless you turn Anchored NPCs to hit.")
 
-	-- OBJECTS PAGE
 	local O = newPage()
 	O.tab = 3
 	O.card("Hitbox shape")
@@ -4713,7 +4973,6 @@ local function buildGui()
 	end)
 	O.note("Turn Pick mode on, then tap or click any part in the game world (not the menu) to add it to the object list by hand, even if Find wouldn't normally catch it. Tap it again to remove it. Turns Objects on automatically. Picks are not saved between sessions.")
 
-	-- AIM PAGE
 	local A = newPage()
 	A.tab = 4
 	A.card("Who gets hit")
@@ -4831,7 +5090,6 @@ local function buildGui()
 	end)
 	A.cell(gA2, function() return "Hit now (G)" end, function() return false end, forceNow)
 
-	-- VISUAL PAGE
 	local V = newPage()
 	V.tab = 5
 	V.card("ESP text")
@@ -4929,7 +5187,6 @@ local function buildGui()
 		V.cell(gV4, function() return nm end, function() return CONFIG.Theme == nm end, function() H.setTheme(nm) end)
 	end
 
-	-- MORE PAGE
 	local M = newPage()
 	M.tab = 6
 	M.card("Presets  (saves all your settings)")
@@ -5005,7 +5262,6 @@ local function buildGui()
 		table.insert(connections, b.Activated:Connect(function() showTab(i) end))
 	end
 
-	-- SEARCH TAB LOGIC
 	local FEATURES = {
 		{ name = "Hitbox ON / OFF (H)", live = true, text = function() return CONFIG.Enabled and "Hitbox ON" or "Hitbox OFF" end,
 			active = function() return CONFIG.Enabled end, click = function() setEnabled(not CONFIG.Enabled) end,
@@ -5453,6 +5709,7 @@ local function buildGui()
 	end))
 	makeDraggable(mini, mini, function() setMinimized(false) end)
 
+	H.buildButtons()
 	showTab(1)
 	refreshUI()
 end
@@ -5500,6 +5757,19 @@ local function updateStatus()
 end
 
 table.insert(connections, UserInputService.InputBegan:Connect(function(input, processed)
+	if H.bindingKey and input.UserInputType == Enum.UserInputType.Keyboard then
+		H.bindingKey = false
+		if input.KeyCode ~= Enum.KeyCode.Escape then
+			CONFIG.UIKeyName = input.KeyCode.Name
+			saveSettings()
+		end
+		refreshUI()
+		return
+	end
+	if not processed and input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode.Name == CONFIG.UIKeyName then
+		H.toggleUI()
+		return
+	end
 	if not processed and input.KeyCode == CONFIG.ToggleKey then
 		setEnabled(not CONFIG.Enabled)
 		return
@@ -5610,7 +5880,6 @@ end))
 local accScan, accProj, accClick, accRay, accObj, accTele = 0, 0, 0, 0, 0, 0
 local simTick = 0
 
--- PICK MODE: tap a part in the world to add it to the breakable-objects list by hand
 table.insert(connections, UserInputService.InputBegan:Connect(function(input, processed)
 	if not (pickMode and alive) or processed then return end
 	if input.UserInputType ~= Enum.UserInputType.MouseButton1 and input.UserInputType ~= Enum.UserInputType.Touch then return end
