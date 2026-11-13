@@ -1544,6 +1544,16 @@ function H.lookInit(root, d)
 		end
 		return
 	end
+	if root:IsA("Part") and root.Parent and Players:GetPlayerFromCharacter(root.Parent)
+		and not root:FindFirstChildWhichIsA("Decal") and not root:FindFirstChildWhichIsA("Texture") then
+		local m = Instance.new("SpecialMesh")
+		m.Name = "HBX_Mesh"
+		m.MeshType = Enum.MeshType.Brick
+		m.Scale = Vector3.one
+		m.Parent = root
+		d.look, d.mesh, d.meshScale, d.made = "mesh", m, Vector3.one, true
+		return
+	end
 	if H.lookCount >= K.LOOK_MAX then return end
 	local was = root.Archivable
 	root.Archivable = true
@@ -1576,7 +1586,10 @@ end
 function H.lookRestore(root, d)
 	local mode = d.look
 	if mode == "mesh" then
-		pcall(function() d.mesh.Scale = d.meshScale end)
+		pcall(function()
+			if d.made then d.mesh:Destroy() else d.mesh.Scale = d.meshScale end
+		end)
+		d.made = nil
 	elseif mode == "clone" then
 		pcall(function() if d.vis then d.vis:Destroy() end end)
 		pcall(function() root.Transparency = d.tr0 end)
@@ -1588,6 +1601,10 @@ end
 
 function H.lookApply(root, d, psz)
 	if not CONFIG.RealLook then
+		if d.look then H.lookRestore(root, d) end
+		return
+	end
+	if CONFIG.BodyPart == "Head" and root.Name == "Head" and root.Parent and Players:GetPlayerFromCharacter(root.Parent) then
 		if d.look then H.lookRestore(root, d) end
 		return
 	end
