@@ -1509,8 +1509,10 @@ local function boxParts(model)
 	local nm = CONFIG.BodyPart
 	if nm == "Head" then
 		add(model:FindFirstChild("Head"))
+		add(model:FindFirstChild("HumanoidRootPart"))
 	elseif nm == "Torso" then
 		add(model:FindFirstChild("UpperTorso") or model:FindFirstChild("Torso"))
+		add(model:FindFirstChild("HumanoidRootPart"))
 	elseif nm == "Root" then
 		add(model:FindFirstChild("HumanoidRootPart"))
 	else
@@ -1601,10 +1603,6 @@ end
 
 function H.lookApply(root, d, psz)
 	if not CONFIG.RealLook then
-		if d.look then H.lookRestore(root, d) end
-		return
-	end
-	if CONFIG.BodyPart == "Head" and root.Name == "Head" and root.Parent and Players:GetPlayerFromCharacter(root.Parent) then
 		if d.look then H.lookRestore(root, d) end
 		return
 	end
