@@ -1507,6 +1507,9 @@ local function boxParts(model)
 		end
 	end
 	local nm = CONFIG.BodyPart
+	-- Head / Torso: the chosen part is expanded AND the HumanoidRootPart is expanded with it. Most games
+	-- resolve a hit through the HRP (bounds queries, Touched filters, magnitude checks), so a Head-only or
+	-- Torso-only box never registered. The HRP is the anchor that keeps every mode hitting.
 	if nm == "Head" then
 		add(model:FindFirstChild("Head"))
 		add(model:FindFirstChild("HumanoidRootPart"))
@@ -1606,6 +1609,10 @@ function H.lookApply(root, d, psz)
 		if d.look then H.lookRestore(root, d) end
 		return
 	end
+	if CONFIG.BodyPart == "Head" and root.Name == "Head" and root.Parent and Players:GetPlayerFromCharacter(root.Parent) then
+		if d.look then H.lookRestore(root, d) end
+		return
+	end
 	if d.look == nil then H.lookInit(root, d) end
 	if d.look == "mesh" and d.mesh and d.mesh.Parent then
 		local n, sc = d.Size, d.meshScale
@@ -1693,14 +1700,25 @@ local function updateTargets()
 					end
 					psz = Vector3.new(math.min(psz.X, 2048), math.min(psz.Y, 2048), math.min(psz.Z, 2048))
 					d.want = psz
-					if root.Size ~= psz then pcall(function() root.Size = psz end) end
+					-- Only rewrite Size when it really changed (>= 1 stud). Rewriting it every frame as the distance
+					-- shifts the cap re-builds the rig's physics each step and freezes remote players.
+					local cur = root.Size
+					if math.abs(cur.X - psz.X) >= 1 or math.abs(cur.Y - psz.Y) >= 1 or math.abs(cur.Z - psz.Z) >= 1 then
+						pcall(function() root.Size = psz end)
+					else
+						psz = cur
+					end
 					pcall(H.lookApply, root, d, psz)
-					if root.CanCollide or not root.CanQuery or not root.CanTouch or not root.Massless then
+					-- The root part of a player's rig is never made Massless: flagging the assembly root massless while
+					-- the rest of the body keeps its mass makes the rig stutter / freeze while its animations still play.
+					local isPlrRoot = root.Name == "HumanoidRootPart" and root.Parent and Players:GetPlayerFromCharacter(root.Parent) ~= nil
+					local wantMassless = not isPlrRoot
+					if root.CanCollide or not root.CanQuery or not root.CanTouch or (wantMassless and not root.Massless) then
 						pcall(function()
 							root.CanCollide = false
 							root.CanQuery = true
 							root.CanTouch = true
-							root.Massless = true
+							if wantMassless then root.Massless = true end
 						end)
 					end
 					if root:IsA("Part") then
@@ -1733,7 +1751,10 @@ table.insert(connections, RunService.Stepped:Connect(function()
 	for root, d in pairs(tparts) do
 		local w, m = d.want, root.Parent
 		if w and m and Players:GetPlayerFromCharacter(m) then
-			if root.Size ~= w then pcall(function() root.Size = w end) end
+			local cs = root.Size
+			if math.abs(cs.X - w.X) >= 1 or math.abs(cs.Y - w.Y) >= 1 or math.abs(cs.Z - w.Z) >= 1 then
+				pcall(function() root.Size = w end)
+			end
 			if root.CanCollide or not root.CanTouch or not root.CanQuery then
 				pcall(function()
 					root.CanCollide = false
